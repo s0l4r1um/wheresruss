@@ -33,7 +33,11 @@ jobs:
           git config --local user.name "GitHub Action"
           git add -A
           git diff-index --quiet HEAD || (git commit -a -m "updated map" --allow-empty)
-
+          
+      - name: pull
+        run: |
+          git pull
+          
       - name: push changes
         uses: ad-m/github-push-action@v0.6.0
         with:
