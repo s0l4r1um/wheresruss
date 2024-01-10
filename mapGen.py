@@ -101,7 +101,8 @@ if authOk:
 # Map all tracks
 
 for track_file in dir_list:
-    with open(track_file, "r") as f:
+    fname = "tracks/" + track_file
+    with open(fname, "r") as f:
         json_data = json.load(f)
     track = []
     for json_dict in json_data['positions']:
