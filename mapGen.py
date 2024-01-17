@@ -28,8 +28,11 @@ response = requests.get(apiUrl + f"flights/{ident}",
 callCount += 1
 if response.status_code == 200:
     flights_dict = response.json()
-    flights_str = json.dumps(flights_dict)
-    with open("flights.json", "w") as f:
+    with open("flights.json", "r+") as f:
+        old = json.load(f)
+        flights_dict.update(old)
+        f.seek(0)
+        flights_str = json.dumps(flights_dict)
         f.write(flights_str)
     authOk = 1
 else:
