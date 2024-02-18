@@ -28,9 +28,14 @@ response = requests.get(apiUrl + f"flights/{ident}",
 callCount += 1
 if response.status_code == 200:
     flights_dict = response.json()
+    new_flights = flights_dict['flights']
     with open("flights.json", "r+") as f:
         old = json.load(f)
-        flights_dict.update(old)
+        old_flights = old['flights']
+        for flight in old_flights:
+            if flight not in new_flights:
+                new_flights.append(flight)
+        flights_dict['flights'] = new_flights
         f.seek(0)
         flights_str = json.dumps(flights_dict)
         f.write(flights_str)
@@ -103,6 +108,7 @@ if authOk:
         
 # Map all tracks
 
+dir_list = os.listdir(track_path)
 for track_file in dir_list:
     fname = "tracks/" + track_file
     with open(fname, "r") as f:
