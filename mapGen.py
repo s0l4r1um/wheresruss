@@ -5,6 +5,7 @@ import pwinput
 import os
 from datetime import date
 from folium.features import DivIcon
+from folium.plugins import AntPath
 
 # Init map
 
@@ -15,7 +16,11 @@ callCount = 0
 # uncomment for local protected API key passing:
 #apiKey = pwinput.pwinput(prompt='API Key: ', mask='')
 # only recommended to use the following in GitHub Actions:
-apiKey = os.environ["AEROAPI_KEY"]
+apiKey = os.getenv("AEROAPI_KEY")
+if not apiKey:
+    apiKey = pwinput.pwinput(prompt='API Key: ', mask='')
+    if not apiKey:
+        raise ValueError("AEROAPI_KEY environment variable is not set")
 apiUrl = "https://aeroapi.flightaware.com/aeroapi/"
 
 ident = 'N785RW'
@@ -26,6 +31,7 @@ print('Grabbing latest flights...')
 response = requests.get(apiUrl + f"flights/{ident}",
     params=payload, headers=auth_header)
 callCount += 1
+
 if response.status_code == 200:
     flights_dict = response.json()
     new_flights = flights_dict['flights']
@@ -109,6 +115,8 @@ if authOk:
 # Map all tracks
 
 dir_list = os.listdir(track_path)
+num_tracks = len(dir_list)
+i = 0
 for track_file in dir_list:
     fname = "tracks/" + track_file
     with open(fname, "r") as f:
@@ -116,7 +124,15 @@ for track_file in dir_list:
     track = []
     for json_dict in json_data['positions']:
         track.append((json_dict['latitude'],json_dict['longitude']))
-    folium.PolyLine(track, tooltip="Coast").add_to(m)
+    last_report = json_data['positions'][-1]
+    timestamp = last_report['timestamp']
+    if i == (num_tracks - 1):
+        folium.plugins.AntPath(
+            locations=track, dash_array=[20, 30], color='red', tooltip=timestamp
+        ).add_to(m)
+    else:
+        folium.PolyLine(track, tooltip=timestamp).add_to(m)
+    i += 1
 
 print('Total API Calls = ', callCount)
 
