@@ -6,6 +6,7 @@ import os
 from datetime import date
 from folium.features import DivIcon
 from folium.plugins import AntPath
+from folium.plugins import TimestampedGeoJson
 
 # Init map
 
@@ -116,17 +117,55 @@ if authOk:
 
 dir_list = os.listdir(track_path)
 num_tracks = len(dir_list)
-
+track = []
 for track_file in dir_list:
     fname = "tracks/" + track_file
     with open(fname, "r") as f:
         json_data = json.load(f)
+    track_poly = []
     track = []
     for json_dict in json_data['positions']:
-        track.append((json_dict['latitude'],json_dict['longitude']))
+        track_poly.append((json_dict['latitude'],json_dict['longitude']))
+        latlong = []
+        latlong.append(json_dict['longitude'])
+        latlong.append(json_dict['latitude'])
+        timestamp = json_dict['timestamp']
+        track.append({"coordinates": latlong, "timestamp": timestamp})
     last_report = json_data['positions'][-1]
     timestamp = last_report['timestamp']
-    folium.PolyLine(track, tooltip=timestamp).add_to(m)
+    folium.PolyLine(track_poly, tooltip=timestamp).add_to(m)
+    
+    ## TODO - figure out how to make this be selectfully displayed
+    # # Convert track data to GeoJSON format
+    # features = [
+    #     {
+    #         "type": "Feature",
+    #         "geometry": {
+    #             "type": "Point",
+    #             "coordinates": point["coordinates"],
+    #         },
+    #         "properties": {
+    #             "time": point["timestamp"],
+    #             "icon": "marker",
+    #             "iconstyle": {
+    #                 "iconUrl": "paper-plane-icon.png",
+    #                 "iconSize": [40, 40],
+    #             }
+    #         },
+    #     }
+    #     for point in track
+    # ]
+    # # Add TimestampedGeoJson to the map
+    # TimestampedGeoJson(
+    #     {"type": "FeatureCollection", "features": features},
+    #     period="PT15M",  # Time interval between points
+    #     add_last_point=False,
+    #     auto_play=False,
+    #     loop=True,
+    #     max_speed=10,
+    #     transition_time=100,
+    #     duration="PT1M"
+    # ).add_to(m)
 
 last_flight = flight_ids[0]
 fname = "tracks/" + last_flight + ".json"
@@ -134,12 +173,46 @@ with open(fname, "r") as f:
     json_data = json.load(f)
 track = []
 for json_dict in json_data['positions']:
-    track.append((json_dict['latitude'],json_dict['longitude']))
-last_report = json_data['positions'][-1]
-timestamp = last_report['timestamp']
-folium.plugins.AntPath(
-    locations=track, dash_array=[20, 30], color='red', tooltip=timestamp
+    latlong = []
+    latlong.append(json_dict['longitude'])
+    latlong.append(json_dict['latitude'])
+    timestamp = json_dict['timestamp']
+    track.append({"coordinates": latlong, "timestamp": timestamp})
+
+# Convert track data to GeoJSON format
+features = [
+    {
+        "type": "Feature",
+        "geometry": {
+            "type": "Point",
+            "coordinates": point["coordinates"],
+        },
+        "properties": {
+            "time": point["timestamp"],
+            "icon": "marker",
+            "iconstyle": {
+                "iconUrl": "paper-plane-icon.png",
+                "iconSize": [40, 40],
+            }
+        },
+    }
+    for point in track
+]
+
+# Add TimestampedGeoJson to the map
+TimestampedGeoJson(
+    {"type": "FeatureCollection", "features": features},
+    period="PT15M",  # Time interval between points
+    add_last_point=False,
+    auto_play=True,
+    loop=True,
+    max_speed=10,
+    transition_time=300,
+    duration="PT1M"
 ).add_to(m)
+
+# show layer group
+folium.LayerControl().add_to(m)
 
 print('Total API Calls = ', callCount)
 
