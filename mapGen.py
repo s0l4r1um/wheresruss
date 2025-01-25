@@ -116,7 +116,7 @@ if authOk:
 
 dir_list = os.listdir(track_path)
 num_tracks = len(dir_list)
-i = 0
+
 for track_file in dir_list:
     fname = "tracks/" + track_file
     with open(fname, "r") as f:
@@ -126,13 +126,20 @@ for track_file in dir_list:
         track.append((json_dict['latitude'],json_dict['longitude']))
     last_report = json_data['positions'][-1]
     timestamp = last_report['timestamp']
-    if i == (num_tracks - 1):
-        folium.plugins.AntPath(
-            locations=track, dash_array=[20, 30], color='red', tooltip=timestamp
-        ).add_to(m)
-    else:
-        folium.PolyLine(track, tooltip=timestamp).add_to(m)
-    i += 1
+    folium.PolyLine(track, tooltip=timestamp).add_to(m)
+
+last_flight = flight_ids[0]
+fname = "tracks/" + last_flight + ".json"
+with open(fname, "r") as f:
+    json_data = json.load(f)
+track = []
+for json_dict in json_data['positions']:
+    track.append((json_dict['latitude'],json_dict['longitude']))
+last_report = json_data['positions'][-1]
+timestamp = last_report['timestamp']
+folium.plugins.AntPath(
+    locations=track, dash_array=[20, 30], color='red', tooltip=timestamp
+).add_to(m)
 
 print('Total API Calls = ', callCount)
 
